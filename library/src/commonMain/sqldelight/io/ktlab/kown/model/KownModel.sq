@@ -1,0 +1,64 @@
+import kotlin.String;
+import kotlin.Boolean;
+import kotlin.collections.Map;
+
+CREATE TABLE IF NOT EXISTS KownDownloadTaskModel (
+    taskId TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    url TEXT NOT NULL,
+    eTag TEXT NOT NULL,
+    tag TEXT,
+    headers TEXT AS Map<String, String>,
+    dirPath TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    status TEXT NOT NULL,
+    totalBytes INTEGER NOT NULL,
+    downloadedBytes INTEGER NOT NULL,
+    lastModifiedAt INTEGER NOT NULL,
+    createAt INTEGER NOT NULL,
+    renameAble INTEGER AS Boolean NOT NULL,
+    renameStrategy TEXT,
+    relateEntityId TEXT
+);
+
+
+selectAll:
+SELECT * FROM `KownDownloadTaskModel`;
+
+selectByTaskId:
+SELECT * FROM `KownDownloadTaskModel` WHERE taskId = ?;
+
+deleteByTaskId:
+DELETE FROM `KownDownloadTaskModel` WHERE taskId = ?;
+
+deleteByTaskIds:
+DELETE FROM `KownDownloadTaskModel` WHERE taskId IN ?;
+
+deleteByTag:
+DELETE FROM `KownDownloadTaskModel` WHERE tag = ?;
+
+deleteAll:
+DELETE FROM `KownDownloadTaskModel`;
+
+insert:
+INSERT OR REPLACE
+INTO `KownDownloadTaskModel`
+(
+`taskId`,
+`title`,
+`url`,
+`eTag`,
+`tag`,
+`headers`,
+`dirPath`,
+`filename`,
+`status`,
+`totalBytes`,
+`downloadedBytes`,
+`lastModifiedAt`,
+`createAt`,
+`renameAble`,
+`renameStrategy`,
+`relateEntityId`
+)
+VALUES ?;
