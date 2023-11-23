@@ -66,8 +66,8 @@ android {
 
 publishing {
     publications {
-        create<MavenPublication>("maven") {
-            groupId = "io.ktlab"
+        register("maven", MavenPublication::class) {
+            groupId = "com.github.ktKongTong"
             artifactId = "kown"
             version = "0.0.1"
             from(components["kotlin"])
