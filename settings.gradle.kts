@@ -19,5 +19,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "kown"
 
-include("library")
-include("kown-demo")
+include(":library",":kown-demo")
