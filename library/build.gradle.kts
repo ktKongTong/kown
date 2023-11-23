@@ -4,6 +4,7 @@ plugins {
     id("com.android.library")
     kotlin("plugin.serialization")
     id("app.cash.sqldelight")
+    id("maven-publish")
 }
 sqldelight {
     databases {
@@ -60,5 +61,16 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "io.ktlab"
+            artifactId = "kown"
+            version = "0.0.1"
+            from(components["kotlin"])
+        }
     }
 }
