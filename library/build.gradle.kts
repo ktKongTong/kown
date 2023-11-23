@@ -64,13 +64,15 @@ android {
     }
 }
 
-publishing {
-    publications {
-        register("maven", MavenPublication::class) {
-            groupId = "com.github.ktKongTong"
-            artifactId = "kown"
-            version = "0.0.1"
-            from(components["kotlin"])
+afterEvaluate {
+    publishing {
+        publications {
+            register("maven", MavenPublication::class) {
+                groupId = "com.github.ktKongTong"
+                artifactId = "kown"
+                version = "0.0.1"
+                from(components["kotlin"])
+            }
         }
     }
 }
