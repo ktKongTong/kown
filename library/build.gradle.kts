@@ -17,7 +17,7 @@ sqldelight {
 kotlin{
     androidTarget("android")
     jvm()
-
+    jvmToolchain(17)
     val ktorVersion = "2.3.6"
     val coroutineVersion = "1.7.3"
     val serializationVersion = "1.6.0"
@@ -41,7 +41,7 @@ kotlin{
         }
         val androidMain by getting {
             dependencies {
-                implementation("app.cash.sqldelight:android-driver:2.0.0")
+//                implementation("app.cash.sqldelight:android-driver:2.0.0")
                 implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
             }
         }
