@@ -68,7 +68,7 @@ afterEvaluate {
     publishing {
         publications {
             register("maven", MavenPublication::class) {
-                groupId = "com.github.ktKongTong"
+                groupId = "io.ktlab.mvn"
                 artifactId = "kown"
                 version = "0.0.1"
                 from(components["kotlin"])
