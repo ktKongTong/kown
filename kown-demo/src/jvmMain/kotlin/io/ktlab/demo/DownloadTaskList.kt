@@ -8,16 +8,12 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import io.ktlab.kown.KownDownloader
 import io.ktlab.kown.model.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 
 //@Composable
 //fun DownloadTaskList(
@@ -39,7 +35,7 @@ fun DownloadTaskListItem(
             val id = downloadTaskBO.taskId
             var progress = 0f
             if (downloadTaskBO.totalBytes > 0) {
-                progress = ((downloadTaskBO.downloadedBytes * 100f) / downloadTaskBO.totalBytes)/100.0f
+                progress = (downloadTaskBO.downloadedBytes * 100f) / downloadTaskBO.totalBytes
             }
             Text("taskId:$id")
 
@@ -48,7 +44,7 @@ fun DownloadTaskListItem(
 
             Text("status:${downloadTaskBO.status.asString()}")
             val progressAnimate by animateFloatAsState(
-                targetValue = progress,
+                targetValue = progress/100.0f,
                 animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
             )
             Column (modifier = Modifier.widthIn(200.dp)){

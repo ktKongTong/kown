@@ -16,14 +16,10 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import io.ktlab.kown.KownDownloader
 import kotlin.system.exitProcess
-import io.ktlab.kown.model.DownloadListener
 import io.ktlab.kown.model.DownloadTaskBO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -46,10 +42,7 @@ private val example = listOf(
 )
 fun main() {
     val kownloader = KownDownloader.new().build()
-    val requests = mutableListOf<DownloadTaskBO>()
-    val scope = CoroutineScope(Dispatchers.Main)
     val ioScope = CoroutineScope(Dispatchers.IO)
-//    val downloadTaskFlow = kownloader.getAllDownloadTaskFlow().flowOn(Dispatchers.IO)
 
     val list = MutableStateFlow(listOf<DownloadTaskBO>())
     ioScope.launch {
@@ -62,7 +55,7 @@ fun main() {
     application {
         Window(
             onCloseRequest = ::exitApplication,
-            title = "BSHelper",
+            title = "kown-demo",
             state = WindowState(size = DpSize(1440.dp, 768.dp))
         ) {
             Column{
@@ -138,36 +131,4 @@ fun buildRequestTask(kown: KownDownloader,url:String,filename:String):DownloadTa
         url, "kown-download", filename)
         .setTag("google")
         .build()
-}
-fun startDownload(kown: KownDownloader,requestList:List<DownloadTaskBO>){
-    for (request in requestList) {
-        val listener = DownloadListener(
-//
-//            onStart = { progress ->
-//                println("onProgress: $progress")
-//            },
-//            onCompleted = { task ->
-//                println("onCompleted: ${task.taskId}")
-//            },
-//            onFailed = { task ->
-//                println("onFailed: ${task.taskId}")
-//            },
-//            onPaused = { task ->
-//                println("onPaused: ${task.taskId}")
-//            },
-//            onProgress = { progress ->
-//                println("onProgress: $progress")
-//            },
-//            onResumed = { task ->
-//                println("onResumed: ${task.taskId}")
-//            },
-//            onError = { task, exception ->
-//                println("onError: ${task.taskId}, ${exception.message}")
-//            },
-//            onCancelled = { task ->
-//                println("onCancelled: ${task.taskId}")
-//            }
-        )
-        kown.enqueue(request, listener)
-    }
 }
