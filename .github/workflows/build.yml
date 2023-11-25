@@ -1,6 +1,7 @@
 name: CI Assemble and Publish
 
 on:
+  workflow_dispatch:
   push:
 #    tags:
 #      - '^[0-9]+.*$'
