@@ -106,11 +106,11 @@ tasks.withType<AbstractPublishToMaven>().configureEach {
 publishing {
     if (rootProject.file("publish.properties").exists()) {
         signing {
-            val signingKeyId:String = findProperty("signingKey").toString()
-            val signingPassword:String = findProperty("signingPassword").toString()
+            val signingKeyId: String = findProperty("signingKey").toString()
+            val signingPassword: String = findProperty("signingPassword").toString()
             useInMemoryPgpKeys(
                 signingKeyId,
-                signingPassword
+                signingPassword,
             )
             sign(publishing.publications)
         }
