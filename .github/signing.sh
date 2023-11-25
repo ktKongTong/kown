@@ -1,5 +1,5 @@
-#echo $SIGNING_KEY | base64 -d > ./secret.gpg
-echo "signing.keyId=$SIGNING_KEY_ID
-signing.password=$SIGNING_PASSWORD
+echo "signing.gnupg.keyName=$SIGNING_KEY_ID
+signing.gnupg.executable=gpg
+signing.gnupg.passphrase=$SIGNING_PASSWORD
 ossrhUsername=$OSSRH_USERNAME
 ossrhPassword=$OSSRH_PASSWORD" >publish.properties
