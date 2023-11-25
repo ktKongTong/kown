@@ -133,6 +133,7 @@ publishing {
         artifact(javadocJar)
         pom {
             description.set("A downloader library for Kotlin Multiplatform")
+            name.set("kown")
             url.set("https://github.com/ktKongTong/kown")
             groupId = rootProject.extra["kownGroupId"].toString()
             artifactId = artifactId.replace("library", "kown")
