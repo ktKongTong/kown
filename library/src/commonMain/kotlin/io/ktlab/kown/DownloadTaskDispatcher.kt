@@ -1,33 +1,50 @@
 package io.ktlab.kown
 
 import io.ktlab.kown.model.DownloadTaskBO
+import io.ktlab.kown.model.KownTaskStatus
 import io.ktlab.kown.model.PauseException
-import io.ktlab.kown.model.TaskStatus
 import io.ktlab.kown.model.isProcessing
-import io.ktor.client.plugins.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 
 // handle running/postProcessing task
 class DownloadTaskDispatcher(
-    private val config: KownConfig
+    private val config: KownConfig,
 ) {
-    private val scope = CoroutineScope(SupervisorJob() +  Dispatchers.IO + CoroutineExceptionHandler { coroutineContext, throwable ->  throwable.printStackTrace() })
+    private val scope =
+        CoroutineScope(
+            SupervisorJob() + Dispatchers.IO +
+                CoroutineExceptionHandler {
+                        _,
+                        throwable,
+                    ->
+                    throwable.printStackTrace()
+                },
+        )
 
-    private val client = config.client?: ktorClient(config)
+    private val client = config.client ?: ktorClient(config)
     private val mutex = Mutex()
     private val downloadingTaskExecutor = mutableMapOf<String, DownloadTaskExecutor>()
 
-    fun download(task: DownloadTaskBO, onJobComplete: () -> Unit = {}) {
-        val executor = DownloadTaskExecutor(task, config.dbHelper,client,config)
+    fun download(
+        task: DownloadTaskBO,
+        onJobComplete: () -> Unit = {},
+    ) {
+        val executor = DownloadTaskExecutor(task, config.dbHelper, client, config)
         runBlocking {
             mutex.lock()
             downloadingTaskExecutor[task.taskId] = executor
             mutex.unlock()
         }
-        task.job = scope.launch {
-            executor.run()
-        }
+        task.job =
+            scope.launch {
+                executor.run()
+            }
         task.job.invokeOnCompletion {
             downloadingTaskExecutor.remove(task.taskId)
             onJobComplete()
@@ -42,7 +59,7 @@ class DownloadTaskDispatcher(
             mutex.lock()
             val executor = downloadingTaskExecutor[task.taskId]
             if (executor != null) {
-                    downloadingTaskExecutor.remove(task.taskId)
+                downloadingTaskExecutor.remove(task.taskId)
                 task.job.cancel(PauseException("task paused", task.status))
             }
             mutex.unlock()
@@ -50,7 +67,7 @@ class DownloadTaskDispatcher(
     }
 
     fun cancel(task: DownloadTaskBO) {
-        if (task.status != TaskStatus.Running && task.status != TaskStatus.PostProcessing) {
+        if (task.status != KownTaskStatus.Running && task.status != KownTaskStatus.PostProcessing) {
             return
         }
         runBlocking {
@@ -63,5 +80,4 @@ class DownloadTaskDispatcher(
             mutex.unlock()
         }
     }
-
 }

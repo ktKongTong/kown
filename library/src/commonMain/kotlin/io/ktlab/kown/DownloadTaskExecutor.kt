@@ -1,31 +1,44 @@
 package io.ktlab.kown
 
 import io.ktlab.kown.database.DBHelper
-import io.ktlab.kown.model.*
 import io.ktlab.kown.model.DownloadException
+import io.ktlab.kown.model.DownloadTaskBO
+import io.ktlab.kown.model.KownTaskStatus
 import io.ktlab.kown.model.PauseException
-import io.ktor.client.*
-import io.ktor.client.plugins.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.utils.io.core.*
-import kotlinx.coroutines.*
+import io.ktlab.kown.model.reset
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.timeout
+import io.ktor.client.request.header
+import io.ktor.client.request.prepareGet
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentLength
+import io.ktor.http.isSuccess
+import io.ktor.utils.io.core.isNotEmpty
+import io.ktor.utils.io.core.readBytes
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import okio.*
+import okio.FileHandle
+import okio.FileSystem
+import okio.Path
 import okio.Path.Companion.toPath
+import okio.buffer
 import okio.use
-
 
 class DownloadTaskExecutor(
     private val task: DownloadTaskBO,
     private val dbHelper: DBHelper,
     private val client: HttpClient,
-    private val config: KownConfig
+    private val config: KownConfig,
 ) {
-
-    private var responseCode:HttpStatusCode? = null
+    private var responseCode: HttpStatusCode? = null
     private lateinit var tempPath: Path
     private lateinit var fileHandle: FileHandle
 
@@ -60,26 +73,30 @@ class DownloadTaskExecutor(
 //    }
 //    )
 
-    suspend fun run() = withContext(Dispatchers.IO){
+    suspend fun run() =
+        withContext(Dispatchers.IO) {
             try {
                 tempPath = getTempPath(task.dirPath, task.filename)
                 checkIfFileExistAndRename()
-                task.status = TaskStatus.Running
+                task.status = KownTaskStatus.Running
                 task.downloadListener.onStart(task)
-                val req = client.prepareGet(task.url){
-                    header(HttpHeaders.IfRange, task.eTag)
-                    header(HttpHeaders.Range, "bytes=${task.downloadedBytes}-")
-                    task.headers.onEach { (key, value) -> header(key, value) }
-                    timeout {
-                        requestTimeoutMillis = task.requestTimeout
-                        connectTimeoutMillis = task.connectTimeout
+                val req =
+                    client.prepareGet(task.url) {
+                        header(HttpHeaders.IfRange, task.eTag)
+                        header(HttpHeaders.Range, "bytes=${task.downloadedBytes}-")
+                        task.headers.onEach { (key, value) -> header(key, value) }
+                        timeout {
+                            requestTimeoutMillis = task.requestTimeout
+                            connectTimeoutMillis = task.connectTimeout
+                        }
                     }
-                }
                 req.execute { resp ->
                     responseCode = resp.status
                     eTag = resp.headers[HttpHeaders.ETag] ?: ""
                     checkIfFreshStartRequiredAndStart()
-                    if (!resp.status.isSuccess()) { throw DownloadException("Unsuccessful response code: $responseCode",task.status) }
+                    if (!resp.status.isSuccess()) {
+                        throw DownloadException("Unsuccessful response code: $responseCode", task.status)
+                    }
                     task.eTag = eTag
                     setIfPartialContentAndContentLength(resp)
                     fileHandle = createFileIfNotExist(tempPath)
@@ -102,17 +119,17 @@ class DownloadTaskExecutor(
                 task.downloadedBytes = task.totalBytes
                 val path = getPath(task.dirPath, task.filename)
                 FileSystem.SYSTEM.atomicMove(tempPath, path)
-                task.status = TaskStatus.PostProcessing
+                task.status = KownTaskStatus.PostProcessing
                 task.downloadListener.onCompleted(task)
-                task.status = TaskStatus.Completed
+                task.status = KownTaskStatus.Completed
                 dbScope.launch { dbHelper.update(task) }
             } catch (e: PauseException) {
-                task.status = TaskStatus.Paused(e.lastStatus)
+                task.status = KownTaskStatus.Paused(e.lastStatus)
                 dbScope.launch { dbHelper.update(task) }
                 task.downloadListener.onPaused(task)
             } catch (e: CancellationException) {
                 deleteTempFile()
-                task.status = TaskStatus.Failed(e.message ?: "", task.status)
+                task.status = KownTaskStatus.Failed(e.message ?: "", task.status)
                 dbScope.launch { dbHelper.update(task) }
                 task.downloadListener.onCancelled(task)
             } catch (e: Exception) {
@@ -120,16 +137,15 @@ class DownloadTaskExecutor(
                     deleteTempFile()
                     task.reset()
                 }
-                task.status = TaskStatus.Failed(e.message ?: "", task.status)
+                task.status = KownTaskStatus.Failed(e.message ?: "", task.status)
                 dbScope.launch { dbHelper.update(task) }
-                task.downloadListener.onError(task,e)
+                task.downloadListener.onError(task, e)
             } finally {
-                if(::fileHandle.isInitialized) {
+                if (::fileHandle.isInitialized) {
                     fileHandle.close()
                 }
             }
         }
-
 
     private fun setIfPartialContentAndContentLength(resp: HttpResponse) {
         if (resp.status == HttpStatusCode.PartialContent) {
@@ -139,17 +155,18 @@ class DownloadTaskExecutor(
             deleteTempFile()
             task.reset()
             resp.contentLength().let {
-                task.totalBytes = it?:task.totalBytes
+                task.totalBytes = it ?: task.totalBytes
             }
         }
     }
+
     private fun checkIfFileExistAndRename() {
         if (FileSystem.SYSTEM.exists(tempPath)) {
             if (!deleteTempFile()) {
                 val path = tempPath.toString()
                 tempPath = (path.split(".")[0] + "2." + path.split(".", limit = 2)[1]).toPath()
             }
-        }else {
+        } else {
             task.reset()
         }
     }
@@ -182,7 +199,6 @@ class DownloadTaskExecutor(
     private fun isETagChanged(task: DownloadTaskBO): Boolean {
         return (!(eTag.isEmpty() || task.eTag.isEmpty()) && task.eTag != eTag)
     }
-
 
     private fun syncIfRequired() {
         val currentBytes: Long = task.downloadedBytes

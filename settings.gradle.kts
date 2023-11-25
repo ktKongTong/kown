@@ -7,16 +7,8 @@ pluginManagement {
     }
 }
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.5.0")
-}
-dependencyResolutionManagement {
-    // https://youtrack.jetbrains.com/issue/KT-51379
-    // repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven("https://jitpack.io")
-    }
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.7.0"
 }
 rootProject.name = "kown"
 
-include(":library",":kown-demo")
+include(":library", ":kown-demo")

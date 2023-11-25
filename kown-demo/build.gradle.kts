@@ -1,17 +1,15 @@
 plugins {
-//    kotlin("jvm")
     kotlin("multiplatform")
     id("org.jetbrains.compose")
 }
-
+val coroutineVersion = "1.7.3"
 kotlin {
     jvmToolchain(17)
     jvm()
     sourceSets {
-        val jvmMain by getting  {
+        val jvmMain by getting {
             dependencies {
                 implementation(project(":library"))
-                val coroutineVersion = "1.7.3"
                 implementation(compose.desktop.currentOs)
                 api(compose.runtime)
                 api(compose.preview)

@@ -1,15 +1,14 @@
 package io.ktlab.kown.model
 
-
-import io.ktlab.kown.KownConfig
 import io.ktlab.kown.DownloadTaskExecutor
+import io.ktlab.kown.KownConfig
 import io.ktlab.kown.getUniqueId
 import kotlinx.coroutines.Job
 import kotlinx.datetime.Clock
 
 enum class RenameStrategy {
     DEFAULT,
-    APPEND_INDEX
+    APPEND_INDEX,
 }
 
 fun DownloadTaskBO.reset() {
@@ -23,7 +22,7 @@ class DownloadTaskVO(
     val title: String,
     val tag: String?,
     val headers: Map<String, String>?,
-    val status: TaskStatus,
+    val status: KownTaskStatus,
     var url: String,
     val dirPath: String,
     val renameAble: Boolean,
@@ -37,7 +36,7 @@ class DownloadTaskVO(
     val speed: Long,
     val relateEntityId: String?,
 ) {
-    fun fromBO(downloadTaskBO: DownloadTaskBO):DownloadTaskVO {
+    fun fromBO(downloadTaskBO: DownloadTaskBO): DownloadTaskVO {
         return DownloadTaskVO(
             taskId = downloadTaskBO.taskId,
             title = downloadTaskBO.title,
@@ -60,13 +59,12 @@ class DownloadTaskVO(
     }
 }
 
-
 class DownloadTaskBO(
     val taskId: String,
     val title: String,
     val tag: String?,
     val headers: Map<String, String> = mapOf(),
-    var status: TaskStatus = TaskStatus.Initial,
+    var status: KownTaskStatus = KownTaskStatus.Initial,
     var url: String = "",
     var dirPath: String = "",
     var renameAble: Boolean = false,
@@ -78,7 +76,6 @@ class DownloadTaskBO(
     internal var requestTimeout: Long = Long.MAX_VALUE,
     internal var connectTimeout: Long = Long.MAX_VALUE,
     internal var eTag: String = "",
-
     var estimatedTime: Long = 0,
     var speed: Long = 0,
     var lastModifiedAt: Long = Clock.System.now().toEpochMilliseconds(),
@@ -87,10 +84,9 @@ class DownloadTaskBO(
 ) {
     internal lateinit var job: Job
 
-
 //    private val backupDownloadTaskBO: DownloadTaskBO by lazy { this.copy() }
 
-     fun copyTask():DownloadTaskBO {
+    fun copyTask(): DownloadTaskBO {
         return DownloadTaskBO(
             status = status,
             totalBytes = totalBytes,
@@ -113,93 +109,100 @@ class DownloadTaskBO(
             eTag = eTag,
             createdAt = createdAt,
             downloadListener = downloadListener,
-
         )
     }
 
-    internal fun regenTask(listener: DownloadListener? = null):DownloadTaskBO {
-//        val copied = this.copy(
-//            status = TaskStatus.Queued(status),
-//            downloadedBytes = 0,
-//            lastModifiedAt = 0,
-//            estimatedTime = 0,
-//            createdAt = Clock.System.now().toEpochMilliseconds(),
-//            speed = 0,
-//        )
-//        listener?.let { copied.downloadListener = it }
-
-        return copyTask()
+    internal fun regenTask(listener: DownloadListener? = null): DownloadTaskBO {
+        val copied = copyTask()
+        listener?.let { copied.downloadListener = it }
+        return copied
     }
 
     data class Builder(
         private val url: String,
         private val dirPath: String,
         private val filename: String,
-        private val config: KownConfig
-    ){
+        private val config: KownConfig,
+    ) {
         private var tag: String? = null
         private var downloadListener: DownloadListener = DownloadListener()
         private var headers: Map<String, String> = mapOf()
         private var requestTimeout: Long = config.requestTimeout
         private var connectTimeout: Long = config.connectTimeout
         private var userAgent: String = config.userAgent
-        private var relateEntityId : String? = null
+        private var relateEntityId: String? = null
         private var title: String = ""
 
         /**
          * set download request tag, could be used to operate all requests with the same tag.
          */
-        fun setTag(tag: String) = apply {
-            this.tag = tag
-        }
+        fun setTag(tag: String) =
+            apply {
+                this.tag = tag
+            }
+
         /**
          * set download request listener,usually for downloaded file postprocess or sync db stuff
          */
-        fun setDownloadListener(downloadListener: DownloadListener) = apply {
-            this.downloadListener = downloadListener
-        }
+        fun setDownloadListener(downloadListener: DownloadListener) =
+            apply {
+                this.downloadListener = downloadListener
+            }
 
         /**
          * set user agent for download request
          */
-        fun setUserAgent(userAgent: String) = apply {
-            this.userAgent = userAgent
-        }
+        fun setUserAgent(userAgent: String) =
+            apply {
+                this.userAgent = userAgent
+            }
+
         /**
          * set download request headers if needed, some headers will be added automatically
          * see [DownloadTaskExecutor.run]
          */
-        fun setHeaders(headers: Map<String, String>) = apply {
-            this.headers = headers.let {
-                if (it["User-Agent"].isNullOrEmpty() && userAgent.isNotEmpty()) {
-                    it + ("User-Agent" to userAgent)
-                } else { it }
+        fun setHeaders(headers: Map<String, String>) =
+            apply {
+                this.headers =
+                    headers.let {
+                        if (it["User-Agent"].isNullOrEmpty() && userAgent.isNotEmpty()) {
+                            it + ("User-Agent" to userAgent)
+                        } else {
+                            it
+                        }
+                    }
             }
-        }
 
         /**
          * set download request read timeout
          */
-        fun setRequestTimeout(timeout: Long) = apply {
-            this.requestTimeout = timeout
-        }
+        fun setRequestTimeout(timeout: Long) =
+            apply {
+                this.requestTimeout = timeout
+            }
+
         /**
          * set download request connect timeout
          */
-        fun setConnectTimeout(timeout: Long) = apply {
-            this.connectTimeout = timeout
-        }
+        fun setConnectTimeout(timeout: Long) =
+            apply {
+                this.connectTimeout = timeout
+            }
 
-        fun setTitle(title: String) = apply {
-            this.title = title
-        }
+        fun setTitle(title: String) =
+            apply {
+                this.title = title
+            }
+
         /**
          * set relate entity id for download request. this provides a way to link download task with other entity.
          * but this means you need to query db when downloading task status changed
          */
-        fun setRelateEntityId(relateEntityId: String) = apply {
-            this.relateEntityId = relateEntityId
-        }
+        fun setRelateEntityId(relateEntityId: String) =
+            apply {
+                this.relateEntityId = relateEntityId
+            }
+
         fun build(): DownloadTaskBO {
             return DownloadTaskBO(
                 taskId = getUniqueId(url, dirPath, filename),

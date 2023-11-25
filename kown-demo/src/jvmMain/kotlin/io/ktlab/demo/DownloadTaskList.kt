@@ -76,7 +76,7 @@ fun DownloadTaskListItem(
                     Text("pause")
                 }
             }
-            if (downloadTaskBO.status is TaskStatus.Paused) {
+            if (downloadTaskBO.status is KownTaskStatus.Paused) {
                 TextButton(onClick = {
                     kown.resumeById(downloadTaskBO.taskId)
                 }) {

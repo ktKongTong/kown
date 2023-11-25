@@ -6,11 +6,17 @@ import okio.Path.Companion.toPath
 import java.security.MessageDigest
 import kotlin.experimental.and
 
-
-fun getPath(dirPath: String, fileName: String): Path {
+fun getPath(
+    dirPath: String,
+    fileName: String,
+): Path {
     return dirPath.toPath().resolve(fileName)
 }
-fun getTempPath(dirPath: String, filename: String): Path {
+
+fun getTempPath(
+    dirPath: String,
+    filename: String,
+): Path {
     return getPath(dirPath, "$filename.kown")
 }
 
@@ -20,11 +26,15 @@ fun checkIfExistAndDelete(path: Path) {
     }
 }
 
-fun getUniqueId(url: String, dirPath: String, filename: String): String {
-
+fun getUniqueId(
+    url: String,
+    dirPath: String,
+    filename: String,
+): String {
     val string = url + Path.DIRECTORY_SEPARATOR + dirPath + Path.DIRECTORY_SEPARATOR + filename
-    val hash: ByteArray = MessageDigest.getInstance("MD5")
-        .digest(string.toByteArray(charset("UTF-8")))
+    val hash: ByteArray =
+        MessageDigest.getInstance("MD5")
+            .digest(string.toByteArray(charset("UTF-8")))
 
     val hex = StringBuilder(hash.size * 2)
     for (b in hash) {
@@ -42,8 +52,6 @@ inline val Long.B: Long get() = this
 inline val Long.KB: Long get() = this * 1024
 inline val Long.MB: Long get() = this * 1024 * 1024
 inline val Long.GB: Long get() = this * 1024 * 1024 * 1024
-
-
 
 object Constants {
     const val DEFAULT_USER_AGENT = "KownClient/0.0.1 KownClient"
