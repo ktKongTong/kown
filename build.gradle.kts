@@ -45,6 +45,6 @@ allprojects {
 }
 
 extra.apply {
-    set("kownVersion", "0.0.1-alpha01")
+    set("kownVersion", "0.0.1-alpha17")
     set("kownGroupId", "io.ktlab.mvn")
 }

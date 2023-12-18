@@ -1,7 +1,9 @@
 package io.ktlab.kown
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktlab.kown.model.DownloadListener
 import io.ktlab.kown.model.DownloadTaskBO
+import io.ktlab.kown.model.DownloadTaskVO
 import io.ktlab.kown.model.KownTaskStatus
 import io.ktlab.kown.model.isPauseAble
 import io.ktlab.kown.model.isProcessing
@@ -18,6 +20,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlin.concurrent.timer
+
+private val logger = KotlinLogging.logger {  }
 
 class KownDownloader(private val config: KownConfig) {
     private val dbScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -46,6 +50,7 @@ class KownDownloader(private val config: KownConfig) {
             downloadingCnt--
         }
     }
+
     private val guard1 = DownloadTaskBO.Builder("guardTask", "", "", config).setTag("!!kown.guardTask").build()
     private val guard2 = DownloadTaskBO.Builder("guardTask", "", "", config).setTag("!!kown.guardTask").build()
     private var currentGuard = guard1
@@ -59,16 +64,16 @@ class KownDownloader(private val config: KownConfig) {
         runBlocking {
             dbScope.async {
                 dbHelper.getAllDownloadTask().let { tasks ->
-                    taskQueueFlow = MutableStateFlow(tasks)
+                    taskQueueFlow = MutableStateFlow(tasks
+                            + currentGuard
+                    )
                 }
             }.await()
-            // 最后一次更新时有下载
             val job =
                 scope.launch {
                     taskQueueFlow.collect {
                         mutex.lock()
                         if (downloadingCnt > config.concurrentDownloads) {
-                            // pause task when downloadingCnt > max
                             it.firstOrNull { it.status == KownTaskStatus.Running }?.let {
                                 pauseTasks(listOf(it))
                             }
@@ -92,7 +97,9 @@ class KownDownloader(private val config: KownConfig) {
                     if (lastDownloadingCnt != 0 && downloadingCnt == 0) {
                         lastDownloadingCnt = 0
                     }
-                    taskQueueFlow.tryEmit(taskQueueFlow.value.filter { it.tag != "!!kown.guardTask" } + guardTask())
+                    taskQueueFlow.tryEmit(taskQueueFlow.value
+                        .filter { it.tag != "!!kown.guardTask" } + guardTask()
+                    )
                 }
             }
         }
@@ -186,12 +193,18 @@ class KownDownloader(private val config: KownConfig) {
     fun retryById(
         taskId: String,
         listener: DownloadListener? = null,
-    ) = blockingOpsById(taskId) { retryTasks(listOf(it), listener) }
+    ) = blockingOpsById(taskId) {
+        logger.debug { "retryById: $taskId" }
+        retryTasks(listOf(it), listener)
+    }
 
     fun retryByTag(
         tag: String,
         listener: DownloadListener? = null,
-    ) = blockingOpsByTag(tag) { retryTasks(it, listener) }
+    ) = blockingOpsByTag(tag) {
+        logger.debug { "retryByTag: $tag" }
+        retryTasks(it, listener)
+    }
 
     fun retryAll(listener: DownloadListener? = null) = blockingOpsAll { retryTasks(it, listener) }
 
@@ -200,17 +213,33 @@ class KownDownloader(private val config: KownConfig) {
      * @param taskId task id
      * @param listener listener,only non-null listener will be used
      */
-    fun cancelById(taskId: String) = blockingOpsById(taskId) { cancelTasks(listOf(it)) }
+    fun cancelById(taskId: String) = blockingOpsById(taskId) {
+        logger.debug { "cancelById: $taskId" }
+        cancelTasks(listOf(it))
+    }
 
-    fun cancelByTag(tag: String) = blockingOpsByTag(tag) { cancelTasks(it) }
+    fun cancelByTag(tag: String) = blockingOpsByTag(tag) {
+        logger.debug { "cancelByTag: $tag" }
+        cancelTasks(it)
+    }
 
-    fun cancelAll() = blockingOpsAll { cancelTasks(it) }
+    fun cancelAll() = blockingOpsAll {
+        logger.debug { "cancelAll" }
+        cancelTasks(it) }
 
-    fun pauseById(taskId: String) = blockingOpsById(taskId) { pauseTasks(listOf(it)) }
+    fun pauseById(taskId: String) = blockingOpsById(taskId) {
+        logger.debug { "pauseById: $taskId" }
+        pauseTasks(listOf(it)) }
 
-    fun pauseByTag(tag: String) = blockingOpsByTag(tag) { pauseTasks(it) }
+    fun pauseByTag(tag: String) = blockingOpsByTag(tag) {
+        logger.debug { "pauseByTag: $tag" }
+        pauseTasks(it)
+    }
 
-    fun pauseAll() = blockingOpsAll { pauseTasks(it) }
+    fun pauseAll() = blockingOpsAll {
+        logger.debug { "pauseAll" }
+        pauseTasks(it)
+    }
 
     /**
      * resume task by id. only resume paused task
@@ -220,7 +249,10 @@ class KownDownloader(private val config: KownConfig) {
     fun resumeById(
         taskId: String,
         listener: DownloadListener? = null,
-    ) = blockingOpsById(taskId) { resumeTasks(listOf(it), listener) }
+    ) = blockingOpsById(taskId) {
+        logger.debug { "resumeById: $taskId" }
+        resumeTasks(listOf(it), listener)
+    }
 
     /**
      * batch resume task by tag. only resume paused task
@@ -230,22 +262,37 @@ class KownDownloader(private val config: KownConfig) {
     fun resumeByTag(
         tag: String,
         listener: DownloadListener? = null,
-    ) = blockingOpsByTag(tag) { resumeTasks(it, listener) }
+    ) = blockingOpsByTag(tag) {
+        logger.debug { "resumeByTag: $tag" }
+        resumeTasks(it, listener)
+    }
 
     /**
      * batch resume task. only resume paused task. recommended to use [resumeById] or [resumeByTag] if possible
      * @param listener listener. null listener will be ignored. if not null,previous listener will be replaced and each resumed task will use this listener
      */
-    fun resumeAll(listener: DownloadListener? = null) = blockingOpsAll { resumeTasks(it, listener) }
+    fun resumeAll(listener: DownloadListener? = null) = blockingOpsAll {
+        logger.debug { "resumeAll" }
+        resumeTasks(it, listener)
+    }
 
-    fun removeById(taskId: String) = blockingOpsById(taskId) { removeTasks(listOf(it)) }
+    fun removeById(taskId: String) = blockingOpsById(taskId) {
+        logger.debug { "removeById: $taskId" }
+        removeTasks(listOf(it))
+    }
 
-    fun removeByTag(tag: String) = blockingOpsByTag(tag) { removeTasks(it) }
+    fun removeByTag(tag: String) = blockingOpsByTag(tag) {
+        logger.debug { "removeByTag: $tag" }
+        removeTasks(it)
+    }
 
     /**
      * batch remove task. only resume paused task. recommended to use [removeById] or [removeByTag] if possible
      */
-    fun removeAll() = blockingOpsAll { removeTasks(it) }
+    fun removeAll() = blockingOpsAll {
+        logger.debug { "removeAll" }
+        removeTasks(it)
+    }
 
     fun clear() {
         runBlocking {
@@ -355,13 +402,14 @@ class KownDownloader(private val config: KownConfig) {
 
     private fun syncTask(tasks: List<DownloadTaskBO>) {
         dbScope.launch {
-            dbHelper.batchUpdate(tasks.filter { it.tag != "!!kown.guardTask" })
+            dbHelper.batchUpdate(tasks)
         }
     }
 
-    fun getAllDownloadTaskFlow(): Flow<List<DownloadTaskBO>> =
+    fun getAllDownloadTaskFlow(): Flow<List<DownloadTaskVO>> =
         taskQueueFlow.map {
-            it.dropLast(1)
+            logger.debug { "getAllDownloadTaskFlow" }
+            it.map { DownloadTaskVO.fromBO(it) }
         }
 
     fun newRequestBuilder(

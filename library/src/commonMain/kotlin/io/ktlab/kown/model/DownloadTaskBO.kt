@@ -36,26 +36,28 @@ class DownloadTaskVO(
     val speed: Long,
     val relateEntityId: String?,
 ) {
-    fun fromBO(downloadTaskBO: DownloadTaskBO): DownloadTaskVO {
-        return DownloadTaskVO(
-            taskId = downloadTaskBO.taskId,
-            title = downloadTaskBO.title,
-            tag = downloadTaskBO.tag,
-            headers = downloadTaskBO.headers,
-            status = downloadTaskBO.status,
-            url = downloadTaskBO.url,
-            dirPath = downloadTaskBO.dirPath,
-            renameAble = downloadTaskBO.renameAble,
-            renameStrategy = downloadTaskBO.renameStrategy,
-            filename = downloadTaskBO.filename,
-            totalBytes = downloadTaskBO.totalBytes,
-            downloadedBytes = downloadTaskBO.downloadedBytes,
-            lastModifiedAt = downloadTaskBO.lastModifiedAt,
-            createdAt = downloadTaskBO.createdAt,
-            estimatedTime = downloadTaskBO.estimatedTime,
-            speed = downloadTaskBO.speed,
-            relateEntityId = downloadTaskBO.relateEntityId,
-        )
+    companion object {
+        fun fromBO(downloadTaskBO: DownloadTaskBO): DownloadTaskVO {
+            return DownloadTaskVO(
+                taskId = downloadTaskBO.taskId,
+                title = downloadTaskBO.title,
+                tag = downloadTaskBO.tag,
+                headers = downloadTaskBO.headers,
+                status = downloadTaskBO.status,
+                url = downloadTaskBO.url,
+                dirPath = downloadTaskBO.dirPath,
+                renameAble = downloadTaskBO.renameAble,
+                renameStrategy = downloadTaskBO.renameStrategy,
+                filename = downloadTaskBO.filename,
+                totalBytes = downloadTaskBO.totalBytes,
+                downloadedBytes = downloadTaskBO.downloadedBytes,
+                lastModifiedAt = downloadTaskBO.lastModifiedAt,
+                createdAt = downloadTaskBO.createdAt,
+                estimatedTime = downloadTaskBO.estimatedTime,
+                speed = downloadTaskBO.speed,
+                relateEntityId = downloadTaskBO.relateEntityId,
+            )
+        }
     }
 }
 

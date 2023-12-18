@@ -27,7 +27,7 @@ import io.ktlab.kown.model.*
 //}
 @Composable
 fun DownloadTaskListItem(
-    downloadTaskBO: DownloadTaskBO,
+    downloadTaskBO: DownloadTaskVO,
     kown:KownDownloader
 ) {
     Card {

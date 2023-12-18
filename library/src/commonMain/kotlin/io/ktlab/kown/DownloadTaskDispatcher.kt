@@ -1,5 +1,6 @@
 package io.ktlab.kown
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktlab.kown.model.DownloadTaskBO
 import io.ktlab.kown.model.KownTaskStatus
 import io.ktlab.kown.model.PauseException
@@ -8,10 +9,12 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 
+private val logger = KotlinLogging.logger {}
 // handle running/postProcessing task
 class DownloadTaskDispatcher(
     private val config: KownConfig,
@@ -35,6 +38,7 @@ class DownloadTaskDispatcher(
         task: DownloadTaskBO,
         onJobComplete: () -> Unit = {},
     ) {
+        logger.debug { "start download task: ${task.taskId}" }
         val executor = DownloadTaskExecutor(task, config.dbHelper, client, config)
         runBlocking {
             mutex.lock()
@@ -46,6 +50,7 @@ class DownloadTaskDispatcher(
                 executor.run()
             }
         task.job.invokeOnCompletion {
+            logger.debug { "download task finished: ${task.taskId}" }
             downloadingTaskExecutor.remove(task.taskId)
             onJobComplete()
         }
@@ -60,7 +65,7 @@ class DownloadTaskDispatcher(
             val executor = downloadingTaskExecutor[task.taskId]
             if (executor != null) {
                 downloadingTaskExecutor.remove(task.taskId)
-                task.job.cancel(PauseException("task paused", task.status))
+                task.job.cancel("task.paused.${task.status}", PauseException("task.paused", task.status))
             }
             mutex.unlock()
         }

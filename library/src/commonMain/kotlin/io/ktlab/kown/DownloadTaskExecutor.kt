@@ -1,11 +1,13 @@
 package io.ktlab.kown
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktlab.kown.database.DBHelper
 import io.ktlab.kown.model.DownloadException
 import io.ktlab.kown.model.DownloadTaskBO
 import io.ktlab.kown.model.KownTaskStatus
 import io.ktlab.kown.model.PauseException
 import io.ktlab.kown.model.reset
+import io.ktlab.kown.model.stringAsTaskStatusMapper
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.header
@@ -32,6 +34,7 @@ import okio.Path.Companion.toPath
 import okio.buffer
 import okio.use
 
+private val logger = KotlinLogging.logger {}
 class DownloadTaskExecutor(
     private val task: DownloadTaskBO,
     private val dbHelper: DBHelper,
@@ -42,7 +45,7 @@ class DownloadTaskExecutor(
     private lateinit var tempPath: Path
     private lateinit var fileHandle: FileHandle
 
-    private var isResumeSupported = true
+    private var isResumeSupported = false
 
     private var lastTrySyncTime = 0L
     private var lastTrySyncBytes = 0L
@@ -123,15 +126,22 @@ class DownloadTaskExecutor(
                 task.downloadListener.onCompleted(task)
                 task.status = KownTaskStatus.Completed
                 dbScope.launch { dbHelper.update(task) }
-            } catch (e: PauseException) {
-                task.status = KownTaskStatus.Paused(e.lastStatus)
-                dbScope.launch { dbHelper.update(task) }
-                task.downloadListener.onPaused(task)
             } catch (e: CancellationException) {
-                deleteTempFile()
-                task.status = KownTaskStatus.Failed(e.message ?: "", task.status)
-                dbScope.launch { dbHelper.update(task) }
-                task.downloadListener.onCancelled(task)
+                if (e.message?.startsWith("task.paused") == true) {
+                    // seem that pass exception with cancellation exception is not implemented yet in jvm
+                    // https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.coroutines.cancellation/-cancellation-exception/
+                    logger.debug { "task paused while executing: ${task.taskId}" }
+                    val lastStatus = stringAsTaskStatusMapper(e.message!!.replace("task.paused.", ""))
+                    task.status = KownTaskStatus.Paused(lastStatus)
+                    dbScope.launch { dbHelper.update(task) }
+                    task.downloadListener.onPaused(task)
+                } else {
+                    logger.debug { "task canceled while running: ${task.taskId}" }
+                    deleteTempFile()
+                    task.status = KownTaskStatus.Failed(e.message ?: "", task.status)
+                    dbScope.launch { dbHelper.update(task) }
+                    task.downloadListener.onCancelled(task)
+                }
             } catch (e: Exception) {
                 if (!isResumeSupported) {
                     deleteTempFile()

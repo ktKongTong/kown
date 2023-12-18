@@ -17,6 +17,7 @@ import androidx.compose.ui.window.application
 import io.ktlab.kown.KownDownloader
 import kotlin.system.exitProcess
 import io.ktlab.kown.model.DownloadTaskBO
+import io.ktlab.kown.model.DownloadTaskVO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,11 +45,11 @@ fun main() {
     val kownloader = KownDownloader.new().build()
     val ioScope = CoroutineScope(Dispatchers.IO)
 
-    val list = MutableStateFlow(listOf<DownloadTaskBO>())
+    val list = MutableStateFlow(listOf<DownloadTaskVO>())
     ioScope.launch {
         kownloader.getAllDownloadTaskFlow().collect {res->
             val tmp = res
-                .map { it.copyTask() }
+//                .map { it.copyTask() }
             list.update { tmp }
         }
     }

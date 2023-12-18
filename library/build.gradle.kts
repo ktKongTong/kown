@@ -30,13 +30,14 @@ kotlin {
         }
     }
     jvmToolchain(17)
-    val ktorVersion = "2.3.6"
+    val ktorVersion = "2.3.7"
     val coroutineVersion = "1.7.3"
     val serializationVersion = "1.6.2"
     val ioVersion = "0.3.0"
     val datetimeVersion = "0.4.1"
     val okioVersion = "3.6.0"
     val sqlDelightVersion = "2.0.0"
+    val kotlinLoggingVersion = "5.1.0"
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -48,6 +49,8 @@ kotlin {
                 implementation("com.squareup.okio:okio:$okioVersion")
                 implementation("app.cash.sqldelight:runtime:$sqlDelightVersion")
                 implementation("app.cash.sqldelight:coroutines-extensions:$sqlDelightVersion")
+                implementation("app.cash.sqldelight:coroutines-extensions:$sqlDelightVersion")
+                implementation("io.github.oshai:kotlin-logging:$kotlinLoggingVersion")
             }
         }
         val androidMain by getting {
