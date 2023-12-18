@@ -36,7 +36,7 @@ kotlin {
     val ioVersion = "0.3.0"
     val datetimeVersion = "0.4.1"
     val okioVersion = "3.6.0"
-    val sqlDelightVersion = "2.0.0"
+    val sqlDelightVersion = "2.0.1"
     val kotlinLoggingVersion = "5.1.0"
     sourceSets {
         val commonMain by getting {
