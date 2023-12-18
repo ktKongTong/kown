@@ -21,7 +21,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlin.concurrent.timer
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
 class KownDownloader(private val config: KownConfig) {
     private val dbScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -64,9 +64,11 @@ class KownDownloader(private val config: KownConfig) {
         runBlocking {
             dbScope.async {
                 dbHelper.getAllDownloadTask().let { tasks ->
-                    taskQueueFlow = MutableStateFlow(tasks
-                            + currentGuard
-                    )
+                    taskQueueFlow =
+                        MutableStateFlow(
+                            tasks +
+                                currentGuard,
+                        )
                 }
             }.await()
             val job =
@@ -97,8 +99,9 @@ class KownDownloader(private val config: KownConfig) {
                     if (lastDownloadingCnt != 0 && downloadingCnt == 0) {
                         lastDownloadingCnt = 0
                     }
-                    taskQueueFlow.tryEmit(taskQueueFlow.value
-                        .filter { it.tag != "!!kown.guardTask" } + guardTask()
+                    taskQueueFlow.tryEmit(
+                        taskQueueFlow.value
+                            .filter { it.tag != "!!kown.guardTask" } + guardTask(),
                     )
                 }
             }
@@ -213,33 +216,41 @@ class KownDownloader(private val config: KownConfig) {
      * @param taskId task id
      * @param listener listener,only non-null listener will be used
      */
-    fun cancelById(taskId: String) = blockingOpsById(taskId) {
-        logger.debug { "cancelById: $taskId" }
-        cancelTasks(listOf(it))
-    }
+    fun cancelById(taskId: String) =
+        blockingOpsById(taskId) {
+            logger.debug { "cancelById: $taskId" }
+            cancelTasks(listOf(it))
+        }
 
-    fun cancelByTag(tag: String) = blockingOpsByTag(tag) {
-        logger.debug { "cancelByTag: $tag" }
-        cancelTasks(it)
-    }
+    fun cancelByTag(tag: String) =
+        blockingOpsByTag(tag) {
+            logger.debug { "cancelByTag: $tag" }
+            cancelTasks(it)
+        }
 
-    fun cancelAll() = blockingOpsAll {
-        logger.debug { "cancelAll" }
-        cancelTasks(it) }
+    fun cancelAll() =
+        blockingOpsAll {
+            logger.debug { "cancelAll" }
+            cancelTasks(it)
+        }
 
-    fun pauseById(taskId: String) = blockingOpsById(taskId) {
-        logger.debug { "pauseById: $taskId" }
-        pauseTasks(listOf(it)) }
+    fun pauseById(taskId: String) =
+        blockingOpsById(taskId) {
+            logger.debug { "pauseById: $taskId" }
+            pauseTasks(listOf(it))
+        }
 
-    fun pauseByTag(tag: String) = blockingOpsByTag(tag) {
-        logger.debug { "pauseByTag: $tag" }
-        pauseTasks(it)
-    }
+    fun pauseByTag(tag: String) =
+        blockingOpsByTag(tag) {
+            logger.debug { "pauseByTag: $tag" }
+            pauseTasks(it)
+        }
 
-    fun pauseAll() = blockingOpsAll {
-        logger.debug { "pauseAll" }
-        pauseTasks(it)
-    }
+    fun pauseAll() =
+        blockingOpsAll {
+            logger.debug { "pauseAll" }
+            pauseTasks(it)
+        }
 
     /**
      * resume task by id. only resume paused task
@@ -271,28 +282,32 @@ class KownDownloader(private val config: KownConfig) {
      * batch resume task. only resume paused task. recommended to use [resumeById] or [resumeByTag] if possible
      * @param listener listener. null listener will be ignored. if not null,previous listener will be replaced and each resumed task will use this listener
      */
-    fun resumeAll(listener: DownloadListener? = null) = blockingOpsAll {
-        logger.debug { "resumeAll" }
-        resumeTasks(it, listener)
-    }
+    fun resumeAll(listener: DownloadListener? = null) =
+        blockingOpsAll {
+            logger.debug { "resumeAll" }
+            resumeTasks(it, listener)
+        }
 
-    fun removeById(taskId: String) = blockingOpsById(taskId) {
-        logger.debug { "removeById: $taskId" }
-        removeTasks(listOf(it))
-    }
+    fun removeById(taskId: String) =
+        blockingOpsById(taskId) {
+            logger.debug { "removeById: $taskId" }
+            removeTasks(listOf(it))
+        }
 
-    fun removeByTag(tag: String) = blockingOpsByTag(tag) {
-        logger.debug { "removeByTag: $tag" }
-        removeTasks(it)
-    }
+    fun removeByTag(tag: String) =
+        blockingOpsByTag(tag) {
+            logger.debug { "removeByTag: $tag" }
+            removeTasks(it)
+        }
 
     /**
      * batch remove task. only resume paused task. recommended to use [removeById] or [removeByTag] if possible
      */
-    fun removeAll() = blockingOpsAll {
-        logger.debug { "removeAll" }
-        removeTasks(it)
-    }
+    fun removeAll() =
+        blockingOpsAll {
+            logger.debug { "removeAll" }
+            removeTasks(it)
+        }
 
     fun clear() {
         runBlocking {

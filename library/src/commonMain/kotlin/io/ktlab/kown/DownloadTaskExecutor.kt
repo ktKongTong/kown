@@ -5,7 +5,6 @@ import io.ktlab.kown.database.DBHelper
 import io.ktlab.kown.model.DownloadException
 import io.ktlab.kown.model.DownloadTaskBO
 import io.ktlab.kown.model.KownTaskStatus
-import io.ktlab.kown.model.PauseException
 import io.ktlab.kown.model.reset
 import io.ktlab.kown.model.stringAsTaskStatusMapper
 import io.ktor.client.HttpClient
@@ -35,6 +34,7 @@ import okio.buffer
 import okio.use
 
 private val logger = KotlinLogging.logger {}
+
 class DownloadTaskExecutor(
     private val task: DownloadTaskBO,
     private val dbHelper: DBHelper,
