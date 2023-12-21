@@ -137,7 +137,12 @@ class KownDownloader(private val config: KownConfig) {
     ) = runBlockingWithLock {
         block(taskQueueFlow.value.filter { it.tag == tag })
     }
-
+    private fun blockingOpsByTagMatched(
+        match: (String?) -> Boolean,
+        block: (List<DownloadTaskBO>) -> Unit,
+    ) = runBlockingWithLock {
+        block(taskQueueFlow.value.filter { match(it.tag) })
+    }
     private fun blockingOpsAll(block: (List<DownloadTaskBO>) -> Unit) = runBlockingWithLock { block(taskQueueFlow.value) }
 
     /**
@@ -209,7 +214,16 @@ class KownDownloader(private val config: KownConfig) {
         retryTasks(it, listener)
     }
 
+    fun retryByTagMatched(
+        match: (String?) -> Boolean,
+        listener: DownloadListener? = null,
+    ) = blockingOpsByTagMatched(match) {
+        logger.debug { "retryByTagMatched: $match" }
+        retryTasks(it, listener)
+    }
+
     fun retryAll(listener: DownloadListener? = null) = blockingOpsAll { retryTasks(it, listener) }
+
 
     /**
      * cancel task by id. only [KownTaskStatus.Paused], [KownTaskStatus.Queued], [KownTaskStatus.Running], [KownTaskStatus.PostProcessing] task can be cancelled
@@ -228,6 +242,14 @@ class KownDownloader(private val config: KownConfig) {
             cancelTasks(it)
         }
 
+    fun cancelByTagMatched(
+        match: (String?) -> Boolean,
+        listener: DownloadListener? = null,
+    ) = blockingOpsByTagMatched(match) {
+        logger.debug { "cancelByTagMatched: $match" }
+        cancelTasks(it)
+    }
+
     fun cancelAll() =
         blockingOpsAll {
             logger.debug { "cancelAll" }
@@ -245,7 +267,13 @@ class KownDownloader(private val config: KownConfig) {
             logger.debug { "pauseByTag: $tag" }
             pauseTasks(it)
         }
-
+    fun pauseByTagMatched(
+        match: (String?) -> Boolean,
+        listener: DownloadListener? = null,
+    ) = blockingOpsByTagMatched(match) {
+        logger.debug { "pauseByTagMatched: $match" }
+        pauseTasks(it)
+    }
     fun pauseAll() =
         blockingOpsAll {
             logger.debug { "pauseAll" }
@@ -278,6 +306,14 @@ class KownDownloader(private val config: KownConfig) {
         resumeTasks(it, listener)
     }
 
+    fun resumeByTagMatched(
+        match: (String?) -> Boolean,
+        listener: DownloadListener? = null,
+    ) = blockingOpsByTagMatched(match) {
+        logger.debug { "resumeByTagMatched: $match" }
+        resumeTasks(it, listener)
+    }
+
     /**
      * batch resume task. only resume paused task. recommended to use [resumeById] or [resumeByTag] if possible
      * @param listener listener. null listener will be ignored. if not null,previous listener will be replaced and each resumed task will use this listener
@@ -297,6 +333,12 @@ class KownDownloader(private val config: KownConfig) {
     fun removeByTag(tag: String) =
         blockingOpsByTag(tag) {
             logger.debug { "removeByTag: $tag" }
+            removeTasks(it)
+        }
+
+    fun removeByTagMatched(match:(String?)->Boolean) =
+        blockingOpsByTagMatched(match) {
+            logger.debug { "removeByTagMatched: $match" }
             removeTasks(it)
         }
 
@@ -426,7 +468,11 @@ class KownDownloader(private val config: KownConfig) {
             logger.debug { "getAllDownloadTaskFlow" }
             it.map { DownloadTaskVO.fromBO(it) }
         }
-
+    fun getAllDownloadTaskFlowByTagMatched(match:(String?)->Boolean): Flow<List<DownloadTaskVO>> =
+        taskQueueFlow.map {
+            logger.debug { "getAllDownloadTaskFlow" }
+            it.filter { match(it.tag) }.map { DownloadTaskVO.fromBO(it) }
+        }
     fun newRequestBuilder(
         url: String,
         dirPath: String,
