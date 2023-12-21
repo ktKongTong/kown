@@ -243,13 +243,11 @@ class KownDownloader(private val config: KownConfig) {
             cancelTasks(it)
         }
 
-    fun cancelByTagMatched(
-        match: (String?) -> Boolean,
-        listener: DownloadListener? = null,
-    ) = blockingOpsByTagMatched(match) {
-        logger.debug { "cancelByTagMatched: $match" }
-        cancelTasks(it)
-    }
+    fun cancelByTagMatched(match: (String?) -> Boolean) =
+        blockingOpsByTagMatched(match) {
+            logger.debug { "cancelByTagMatched: $match" }
+            cancelTasks(it)
+        }
 
     fun cancelAll() =
         blockingOpsAll {
@@ -269,13 +267,11 @@ class KownDownloader(private val config: KownConfig) {
             pauseTasks(it)
         }
 
-    fun pauseByTagMatched(
-        match: (String?) -> Boolean,
-        listener: DownloadListener? = null,
-    ) = blockingOpsByTagMatched(match) {
-        logger.debug { "pauseByTagMatched: $match" }
-        pauseTasks(it)
-    }
+    fun pauseByTagMatched(match: (String?) -> Boolean) =
+        blockingOpsByTagMatched(match) {
+            logger.debug { "pauseByTagMatched: $match" }
+            pauseTasks(it)
+        }
 
     fun pauseAll() =
         blockingOpsAll {
