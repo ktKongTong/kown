@@ -34,7 +34,7 @@ kotlin {
     val coroutineVersion = "1.7.3"
     val serializationVersion = "1.6.2"
     val ioVersion = "0.3.0"
-    val datetimeVersion = "0.4.1"
+    val datetimeVersion = "0.5.0"
     val okioVersion = "3.6.0"
     val sqlDelightVersion = "2.0.0"
     val kotlinLoggingVersion = "5.1.0"
