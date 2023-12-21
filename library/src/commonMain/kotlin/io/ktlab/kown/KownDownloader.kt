@@ -137,12 +137,14 @@ class KownDownloader(private val config: KownConfig) {
     ) = runBlockingWithLock {
         block(taskQueueFlow.value.filter { it.tag == tag })
     }
+
     private fun blockingOpsByTagMatched(
         match: (String?) -> Boolean,
         block: (List<DownloadTaskBO>) -> Unit,
     ) = runBlockingWithLock {
         block(taskQueueFlow.value.filter { match(it.tag) })
     }
+
     private fun blockingOpsAll(block: (List<DownloadTaskBO>) -> Unit) = runBlockingWithLock { block(taskQueueFlow.value) }
 
     /**
@@ -224,7 +226,6 @@ class KownDownloader(private val config: KownConfig) {
 
     fun retryAll(listener: DownloadListener? = null) = blockingOpsAll { retryTasks(it, listener) }
 
-
     /**
      * cancel task by id. only [KownTaskStatus.Paused], [KownTaskStatus.Queued], [KownTaskStatus.Running], [KownTaskStatus.PostProcessing] task can be cancelled
      * @param taskId task id
@@ -267,6 +268,7 @@ class KownDownloader(private val config: KownConfig) {
             logger.debug { "pauseByTag: $tag" }
             pauseTasks(it)
         }
+
     fun pauseByTagMatched(
         match: (String?) -> Boolean,
         listener: DownloadListener? = null,
@@ -274,6 +276,7 @@ class KownDownloader(private val config: KownConfig) {
         logger.debug { "pauseByTagMatched: $match" }
         pauseTasks(it)
     }
+
     fun pauseAll() =
         blockingOpsAll {
             logger.debug { "pauseAll" }
@@ -336,7 +339,7 @@ class KownDownloader(private val config: KownConfig) {
             removeTasks(it)
         }
 
-    fun removeByTagMatched(match:(String?)->Boolean) =
+    fun removeByTagMatched(match: (String?) -> Boolean) =
         blockingOpsByTagMatched(match) {
             logger.debug { "removeByTagMatched: $match" }
             removeTasks(it)
@@ -468,11 +471,13 @@ class KownDownloader(private val config: KownConfig) {
             logger.debug { "getAllDownloadTaskFlow" }
             it.map { DownloadTaskVO.fromBO(it) }
         }
-    fun getAllDownloadTaskFlowByTagMatched(match:(String?)->Boolean): Flow<List<DownloadTaskVO>> =
+
+    fun getAllDownloadTaskFlowByTagMatched(match: (String?) -> Boolean): Flow<List<DownloadTaskVO>> =
         taskQueueFlow.map {
             logger.debug { "getAllDownloadTaskFlow" }
             it.filter { match(it.tag) }.map { DownloadTaskVO.fromBO(it) }
         }
+
     fun newRequestBuilder(
         url: String,
         dirPath: String,
